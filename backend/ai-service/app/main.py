@@ -1,8 +1,11 @@
 from typing import Union
 
 from fastapi import FastAPI
+from .routers import ai
 
 app = FastAPI(root_path="/ai")
+
+app.include_router(ai.router)
 
 
 @app.get("/")
