@@ -7,11 +7,14 @@ from .database import get_db, engine
 from .models import user as user_model
 from .schemas.user import UserCreate, Token
 from .services.auth_service import AuthService
+from .routers import employee_router
 
-# Create tables
 user_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(root_path="/base")
+
+
+app.include_router(employee_router.router) 
 
 
 @app.get("/")
@@ -22,7 +25,6 @@ def read_root():
 @app.get("/db-check")
 def check_db_connection(db: Session = Depends(get_db)):
     try:
-        # Try to execute a simple query
         db.execute(text("SELECT 1"))
         return {"status": "success", "message": "Connected to PostgreSQL"}
     except Exception as e:
