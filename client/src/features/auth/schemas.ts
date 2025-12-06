@@ -5,6 +5,10 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   full_name: z.string().optional(),
@@ -29,6 +33,7 @@ export const userSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type TokenResponse = z.infer<typeof tokenSchema>;
 export type User = z.infer<typeof userSchema>;
