@@ -8,6 +8,7 @@ from .models import user as user_model
 from .schemas.user import UserCreate, Token
 from .services.auth_service import AuthService
 from .routers import employee_router
+from fastapi.middleware.cors import CORSMiddleware
 
 user_model.Base.metadata.create_all(bind=engine)
 
@@ -16,6 +17,18 @@ app = FastAPI(root_path="/base")
 
 app.include_router(employee_router.router) 
 
+
+app.include_router(employee_router.router) 
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+        allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],    
+)
 
 @app.get("/")
 def read_root():
