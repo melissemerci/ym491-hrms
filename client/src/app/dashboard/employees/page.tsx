@@ -1,6 +1,38 @@
+"use client";
+
 import React from "react";
+import Link from "next/link";
+import { useEmployees } from "@/features/employees/hooks/use-employees";
 
 export default function EmployeesPage() {
+  const { data: employees, isLoading, error } = useEmployees();
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const getStatusBadge = (isActive: boolean) => {
+    if (isActive) {
+      return (
+        <div className="inline-flex items-center gap-2 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
+          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+          <span>Active</span>
+        </div>
+      );
+    }
+    return (
+      <div className="inline-flex items-center gap-2 rounded-full bg-red-100 dark:bg-red-900/50 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
+        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+        <span>Inactive</span>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
@@ -9,7 +41,7 @@ export default function EmployeesPage() {
             Employees
           </h1>
           <p className="text-base text-[#4e6797] dark:text-gray-400">
-            Manage all employees in your organization.
+            Manage all employees in your organization. {employees && `(${employees.length} total)`}
           </p>
         </div>
         <button className="flex w-full md:w-auto cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
@@ -69,7 +101,7 @@ export default function EmployeesPage() {
                   Employee Name
                 </th>
                 <th className="px-6 py-3" scope="col">
-                  Employee ID
+                  Title
                 </th>
                 <th className="px-6 py-3" scope="col">
                   Department
@@ -78,7 +110,7 @@ export default function EmployeesPage() {
                   Status
                 </th>
                 <th className="px-6 py-3" scope="col">
-                  Start Date
+                  Hire Date
                 </th>
                 <th className="px-6 py-3 text-right" scope="col">
                   Actions
@@ -86,278 +118,100 @@ export default function EmployeesPage() {
               </tr>
             </thead>
             <tbody>
-              {/* Row 1 */}
-              <tr className="bg-white dark:bg-[#1a2233] border-b border-[#e7ebf3] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <td className="p-4 w-4">
-                  <input
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary bg-gray-100 dark:bg-gray-700"
-                    type="checkbox"
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                      style={{
-                        backgroundImage:
-                          "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBU2AFhKIVXtOq2OW5uRB1q3jFSD3YXyE3-nmJi6pUpvMGKI8RfjbU0Gsil-okq8OkHQufM-nMMiAjJjhhg-JKTAZnv7Sss4R6c6KY3x53cXj-j02pr_na8WfryDqt3dYmARXdPaQvAbN5R4kaPoWGBy-4Sck6lSFdon8klFhOhJjZmWcGXfYZMhBq5TD1Iicg8iBIqqbLYXsMpLkvKdaQRMsXfP5NPbrodBFGbIjWEbByyAwmyiwnthXajnwdKbXV3jK7pQFa8TBIS')",
-                      }}
-                    ></div>
-                    <div className="flex flex-col">
-                      <p className="font-medium text-[#0e121b] dark:text-white">
-                        Jane Doe
-                      </p>
-                      <p className="text-xs text-[#4e6797] dark:text-gray-400">
-                        jane.doe@example.com
-                      </p>
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <div className="flex items-center justify-center gap-2 text-[#4e6797] dark:text-gray-400">
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span>Loading employees...</span>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-medium text-[#4e6797] dark:text-gray-300">
-                  EMP-00123
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Product & Engineering
-                </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span>Active</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Oct 15, 2021
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <a
-                    className="font-medium text-primary hover:underline"
-                    href="/dashboard/employees/123"
-                  >
-                    View Profile
-                  </a>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              )}
+              
+              {error && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <div className="text-red-500">
+                      Error loading employees. Please try again.
+                    </div>
+                  </td>
+                </tr>
+              )}
 
-              {/* Row 2 */}
-              <tr className="bg-white dark:bg-[#1a2233] border-b border-[#e7ebf3] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <td className="p-4 w-4">
-                  <input
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary bg-gray-100 dark:bg-gray-700"
-                    type="checkbox"
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                      style={{
-                        backgroundImage:
-                          "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBTH1oFF6iLRPPg9IPYIuRNAtQOQ9SabKRQznfn1u-nYTvGvP-c8pRkG-p48-s84Zg7hIsrBl2BX04T3ek_oGLH2qZYvc1YZ6mucOEuZjjvgrhxGM2lp4pblzKnnr0PCqJ23uxwpcy7e5Y-6i8w3_zTNt_Gt7u1KW9BZGOe0UGMEMovoXzUBuiK_ttNYs-m5_5XEWwXY_YWhZlG0P-hzllriLabPdRwksbVQndVrLZ6eR1BshPeF_2IvZ_LjjJAH1d-aHES3lBbKkX')",
-                      }}
-                    ></div>
-                    <div className="flex flex-col">
-                      <p className="font-medium text-[#0e121b] dark:text-white">
-                        John Smith
-                      </p>
-                      <p className="text-xs text-[#4e6797] dark:text-gray-400">
-                        john.smith@example.com
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-medium text-[#4e6797] dark:text-gray-300">
-                  EMP-00124
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Marketing
-                </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span>Active</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Sep 01, 2020
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <a
-                    className="font-medium text-primary hover:underline"
-                    href="/dashboard/employees/123"
-                  >
-                    View Profile
-                  </a>
-                </td>
-              </tr>
+              {!isLoading && !error && employees && employees.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-[#4e6797] dark:text-gray-400">
+                    No employees found.
+                  </td>
+                </tr>
+              )}
 
-              {/* Row 3 */}
-              <tr className="bg-white dark:bg-[#1a2233] border-b border-[#e7ebf3] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <td className="p-4 w-4">
-                  <input
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary bg-gray-100 dark:bg-gray-700"
-                    type="checkbox"
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                      style={{
-                        backgroundImage:
-                          "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBTH1oFF6iLRPPg9IPYIuRNAtQOQ9SabKRQznfn1u-nYTvGvP-c8pRkG-p48-s84Zg7hIsrBl2BX04T3ek_oGLH2qZYvc1YZ6mucOEuZjjvgrhxGM2lp4pblzKnnr0PCqJ23uxwpcy7e5Y-6i8w3_zTNt_Gt7u1KW9BZGOe0UGMEMovoXzUBuiK_ttNYs-m5_5XEWwXY_YWhZlG0P-hzllriLabPdRwksbVQndVrLZ6eR1BshPeF_2IvZ_LjjJAH1d-aHES3lBbKkX')",
-                      }}
-                    ></div>
-                    <div className="flex flex-col">
-                      <p className="font-medium text-[#0e121b] dark:text-white">
-                        Emily Jones
-                      </p>
-                      <p className="text-xs text-[#4e6797] dark:text-gray-400">
-                        emily.jones@example.com
-                      </p>
+              {!isLoading && !error && employees && employees.map((employee) => (
+                <tr 
+                  key={employee.id}
+                  className="bg-white dark:bg-[#1a2233] border-b last:border-b-0 border-[#e7ebf3] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  <td className="p-4 w-4">
+                    <input
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary bg-gray-100 dark:bg-gray-700"
+                      type="checkbox"
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/20 text-primary rounded-full size-10 flex items-center justify-center font-semibold">
+                        {employee.first_name[0]}{employee.last_name[0]}
+                      </div>
+                      <div className="flex flex-col">
+                        <p className="font-medium text-[#0e121b] dark:text-white">
+                          {employee.first_name} {employee.last_name}
+                        </p>
+                        <p className="text-xs text-[#4e6797] dark:text-gray-400">
+                          {employee.first_name.toLowerCase()}.{employee.last_name.toLowerCase()}@company.com
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-medium text-[#4e6797] dark:text-gray-300">
-                  EMP-00125
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Sales
-                </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-red-100 dark:bg-red-900/50 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span>Inactive</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Jun 22, 2022
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <a
-                    className="font-medium text-primary hover:underline"
-                    href="/dashboard/employees/123"
-                  >
-                    View Profile
-                  </a>
-                </td>
-              </tr>
-
-              {/* Row 4 */}
-              <tr className="bg-white dark:bg-[#1a2233] border-b border-[#e7ebf3] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <td className="p-4 w-4">
-                  <input
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary bg-gray-100 dark:bg-gray-700"
-                    type="checkbox"
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                      style={{
-                        backgroundImage:
-                          "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBTH1oFF6iLRPPg9IPYIuRNAtQOQ9SabKRQznfn1u-nYTvGvP-c8pRkG-p48-s84Zg7hIsrBl2BX04T3ek_oGLH2qZYvc1YZ6mucOEuZjjvgrhxGM2lp4pblzKnnr0PCqJ23uxwpcy7e5Y-6i8w3_zTNt_Gt7u1KW9BZGOe0UGMEMovoXzUBuiK_ttNYs-m5_5XEWwXY_YWhZlG0P-hzllriLabPdRwksbVQndVrLZ6eR1BshPeF_2IvZ_LjjJAH1d-aHES3lBbKkX')",
-                      }}
-                    ></div>
-                    <div className="flex flex-col">
-                      <p className="font-medium text-[#0e121b] dark:text-white">
-                        Michael Brown
-                      </p>
-                      <p className="text-xs text-[#4e6797] dark:text-gray-400">
-                        michael.brown@example.com
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-medium text-[#4e6797] dark:text-gray-300">
-                  EMP-00126
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Human Resources
-                </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span>Active</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Mar 12, 2023
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <a
-                    className="font-medium text-primary hover:underline"
-                    href="/dashboard/employees/123"
-                  >
-                    View Profile
-                  </a>
-                </td>
-              </tr>
-
-              {/* Row 5 */}
-              <tr className="bg-white dark:bg-[#1a2233] hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <td className="p-4 w-4">
-                  <input
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary bg-gray-100 dark:bg-gray-700"
-                    type="checkbox"
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                      style={{
-                        backgroundImage:
-                          "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBTH1oFF6iLRPPg9IPYIuRNAtQOQ9SabKRQznfn1u-nYTvGvP-c8pRkG-p48-s84Zg7hIsrBl2BX04T3ek_oGLH2qZYvc1YZ6mucOEuZjjvgrhxGM2lp4pblzKnnr0PCqJ23uxwpcy7e5Y-6i8w3_zTNt_Gt7u1KW9BZGOe0UGMEMovoXzUBuiK_ttNYs-m5_5XEWwXY_YWhZlG0P-hzllriLabPdRwksbVQndVrLZ6eR1BshPeF_2IvZ_LjjJAH1d-aHES3lBbKkX')",
-                      }}
-                    ></div>
-                    <div className="flex flex-col">
-                      <p className="font-medium text-[#0e121b] dark:text-white">
-                        Jessica Williams
-                      </p>
-                      <p className="text-xs text-[#4e6797] dark:text-gray-400">
-                        jessica.williams@example.com
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-medium text-[#4e6797] dark:text-gray-300">
-                  EMP-00127
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Finance
-                </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 text-xs font-medium text-yellow-800 dark:text-yellow-300">
-                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    <span>On Leave</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[#0e121b] dark:text-white">
-                  Jan 05, 2019
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <a
-                    className="font-medium text-primary hover:underline"
-                    href="/dashboard/employees/123"
-                  >
-                    View Profile
-                  </a>
-                </td>
-              </tr>
+                  </td>
+                  <td className="px-6 py-4 text-[#0e121b] dark:text-white">
+                    {employee.title || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 text-[#0e121b] dark:text-white">
+                    {employee.department || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {getStatusBadge(employee.is_active)}
+                  </td>
+                  <td className="px-6 py-4 text-[#0e121b] dark:text-white">
+                    {formatDate(employee.hire_date)}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <Link
+                      className="font-medium text-primary hover:underline"
+                      href={`/dashboard/employees/${employee.id}`}
+                    >
+                      View Profile
+                    </Link>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
         <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#e7ebf3] dark:border-gray-700">
           <p className="text-sm text-[#4e6797] dark:text-gray-400">
-            Showing{" "}
-            <span className="font-semibold text-[#0e121b] dark:text-white">
-              1-5
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-[#0e121b] dark:text-white">
-              100
-            </span>
+            {employees && (
+              <>
+                Showing{" "}
+                <span className="font-semibold text-[#0e121b] dark:text-white">
+                  {employees.length > 0 ? 1 : 0}-{employees.length}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-[#0e121b] dark:text-white">
+                  {employees.length}
+                </span>
+              </>
+            )}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -366,7 +220,10 @@ export default function EmployeesPage() {
             >
               Previous
             </button>
-            <button className="flex items-center justify-center rounded-lg h-9 px-3 border border-[#d0d7e7] dark:border-gray-700 text-sm font-medium text-[#0e121b] dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button 
+              className="flex items-center justify-center rounded-lg h-9 px-3 border border-[#d0d7e7] dark:border-gray-700 text-sm font-medium text-[#0e121b] dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              disabled
+            >
               Next
             </button>
           </div>
