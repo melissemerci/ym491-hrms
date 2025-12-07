@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { LoginForm } from "@/components/login-form";
 import { Icons } from "@/components/icons";
@@ -29,15 +28,14 @@ export default function LoginPage() {
                 <span className="text-white text-xl font-bold">HRiQ</span>
               </motion.div>
             </div>
-            <div className="absolute inset-0 z-0 pointer-events-none select-none">
-              <Image
+            <div className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNW02d3lrbHdscHZmdHB3YmZrcW41cGFvY2JkMDNocGl3NnNnMmh1byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HUme5gGCrlo5Dc4/giphy.gif"
                 alt="Abstract blue and purple gradient background"
-                fill
-                className="object-cover opacity-20"
-                priority
-                sizes="50vw"
+                className="w-full h-full object-cover opacity-20"
                 draggable={false}
+                loading="eager"
               />
             </div>
             <motion.div 

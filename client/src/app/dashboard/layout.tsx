@@ -36,7 +36,7 @@ export default function DashboardLayout({
             </Link>
             <Link
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-white/5 transition-colors duration-200"
-              href="#"
+              href="/dashboard/employees"
             >
               <span className="material-symbols-outlined">person</span>
               <p className="text-sm font-medium leading-normal">Employees</p>

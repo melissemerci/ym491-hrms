@@ -4,6 +4,14 @@ services:
     container_name: gateway
     ports:
       - "80:80"
+    develop:
+      watch:
+        - action: sync
+          path: ./gateway/html
+          target: /usr/share/nginx/html
+        - action: sync
+          path: ./gateway/nginx.conf
+          target: /etc/nginx/nginx.conf
     depends_on:
       - ai-service
       - base-service
@@ -22,16 +30,28 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   ai-service:
     build: ./ai-service
     container_name: ai-service
     ports:
       - "8001:8000"
+    develop:
+      watch:
+        - action: sync
+          path: ./ai-service
+          target: /app
+          ignore:
+            - .venv/
+            - __pycache__/
+        - action: rebuild
+          path: ./ai-service/requirements.txt
     volumes:
       - ./ai-service:/app
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/app_db
+      - GEMINI_API_KEY=AIzaSyCchn3aflIROtmRmieoIBidk9zx410RNnE
     depends_on:
       - db
     restart: always
@@ -41,6 +61,16 @@ services:
     container_name: base-service
     ports:
       - "8002:8000"
+    develop:
+      watch:
+        - action: sync
+          path: ./base-service
+          target: /app
+          ignore:
+            - .venv/
+            - __pycache__/
+        - action: rebuild
+          path: ./base-service/requirements.txt
     volumes:
       - ./base-service:/app
     environment:
@@ -54,6 +84,16 @@ services:
     container_name: io-service
     ports:
       - "8003:8000"
+    develop:
+      watch:
+        - action: sync
+          path: ./io-service
+          target: /app
+          ignore:
+            - .venv/
+            - __pycache__/
+        - action: rebuild
+          path: ./io-service/requirements.txt
     volumes:
       - ./io-service:/app
     # IO service might need firebase credentials env vars

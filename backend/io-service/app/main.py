@@ -2,7 +2,7 @@ from typing import Union
 from fastapi import FastAPI
 from .firebase import get_firestore_client
 
-app = FastAPI(root_path="/io")
+app = FastAPI(root_path="/api/io")
 
 
 @app.get("/")
