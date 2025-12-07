@@ -14,7 +14,8 @@ class UserRepository:
             email=user.email,
             hashed_password=hashed_password,
             full_name=user.full_name,
-            is_active=user.is_active
+            is_active=user.is_active,
+            role=user.role
         )
         self.db.add(db_user)
         self.db.commit()
