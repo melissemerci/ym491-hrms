@@ -2,11 +2,14 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
+from ..models.role import UserRole
+
 # Base schema (common attributes)
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     is_active: Optional[bool] = True
+    role: UserRole = UserRole.USER
 
 # Schema for creating a user (Input DTO)
 class UserCreate(UserBase):

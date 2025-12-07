@@ -5,18 +5,23 @@ from ..database import get_db
 from ..models import employee as employee_model
 from ..schemas.employee import EmployeeCreate, Employee as EmployeeSchema, EmployeeUpdate 
 from sqlalchemy.exc import IntegrityError
+from ..dependencies import RoleChecker
+from ..models.role import UserRole
 
 router = APIRouter(
     prefix="/employees",
     tags=["Employees"],
 )
 
-@router.get("/", response_model=List[EmployeeSchema])
+allow_any_authenticated_user = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
+allow_admin_only = Depends(RoleChecker([UserRole.ADMIN]))
+
+@router.get("/", response_model=List[EmployeeSchema], dependencies=[allow_any_authenticated_user])
 def get_all_employees(db: Session = Depends(get_db)):
     employees = db.query(employee_model.Employee).all()
     return employees
 
-@router.get("/details/{employee_id}", response_model=EmployeeSchema)
+@router.get("/details/{employee_id}", response_model=EmployeeSchema, dependencies=[allow_any_authenticated_user])
 def get_employee(employee_id: int, db: Session = Depends(get_db)):
     employee = db.query(employee_model.Employee).filter(employee_model.Employee.id == employee_id).first()
     
@@ -25,7 +30,7 @@ def get_employee(employee_id: int, db: Session = Depends(get_db)):
         
     return employee
 
-@router.put("/details/{employee_id}", response_model=EmployeeSchema)
+@router.put("/details/{employee_id}", response_model=EmployeeSchema, dependencies=[allow_admin_only])
 def update_employee(employee_id: int, employee_update: EmployeeUpdate, db: Session = Depends(get_db)):
     
     employee = db.query(employee_model.Employee).filter(employee_model.Employee.id == employee_id).first()
@@ -48,7 +53,7 @@ def update_employee(employee_id: int, employee_update: EmployeeUpdate, db: Sessi
     return employee
 
 # YENİ EKLENEN FONKSİYON: Çalışan Silme (DELETE)
-@router.delete("/details/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/details/{employee_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[allow_admin_only])
 def delete_employee(employee_id: int, db: Session = Depends(get_db)):
     employee = db.query(employee_model.Employee).filter(employee_model.Employee.id == employee_id)
     
@@ -62,7 +67,7 @@ def delete_employee(employee_id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/", response_model=EmployeeSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EmployeeSchema, status_code=status.HTTP_201_CREATED, dependencies=[allow_admin_only])
 def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db)):
   
     db_employee = employee_model.Employee(**employee.model_dump())
