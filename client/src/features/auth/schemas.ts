@@ -19,10 +19,7 @@ export const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-export const tokenSchema = z.object({
-  access_token: z.string(),
-  token_type: z.string(),
-});
+export const tokenSchema = z.string();
 
 export const userSchema = z.object({
   id: z.number(),

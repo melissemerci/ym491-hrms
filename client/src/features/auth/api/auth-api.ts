@@ -7,12 +7,13 @@ export const authApi = {
     formData.append('username', data.email);
     formData.append('password', data.password);
 
-    const response = await api.post<TokenResponse>('/base/token', formData, {
+    const response = await api.post<{ access_token: string }>('/base/token', formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
-    return response.data;
+
+    return response.access_token;
   },
 
   register: async (data: RegisterInput): Promise<TokenResponse> => {
