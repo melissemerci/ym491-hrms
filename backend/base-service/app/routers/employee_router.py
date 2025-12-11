@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from ..database import get_db
 from ..models import employee as employee_model
 from ..schemas.employee import EmployeeCreate, Employee as EmployeeSchema, EmployeeUpdate 
@@ -90,3 +91,35 @@ def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db)):
         
     db.refresh(db_employee)
     return db_employee
+
+@router.get("/statistics", dependencies=[allow_any_authenticated_user])
+def get_employee_statistics(db: Session = Depends(get_db)):
+    """Get employee statistics including total count, active count, and department breakdown"""
+    
+    # Total employees count
+    total_count = db.query(func.count(employee_model.Employee.id)).scalar()
+    
+    # Active employees count
+    active_count = db.query(func.count(employee_model.Employee.id)).filter(
+        employee_model.Employee.is_active == True
+    ).scalar()
+    
+    # Department breakdown
+    department_stats = db.query(
+        employee_model.Employee.department,
+        func.count(employee_model.Employee.id).label('count')
+    ).filter(
+        employee_model.Employee.department.isnot(None)
+    ).group_by(
+        employee_model.Employee.department
+    ).all()
+    
+    return {
+        "total_employees": total_count or 0,
+        "active_employees": active_count or 0,
+        "inactive_employees": (total_count or 0) - (active_count or 0),
+        "departments": [
+            {"name": dept, "count": count} 
+            for dept, count in department_stats
+        ]
+    }

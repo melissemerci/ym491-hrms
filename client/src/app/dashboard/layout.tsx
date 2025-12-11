@@ -1,11 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/auth-provider";
+import { useLogout } from "@/features/auth/hooks/use-auth";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = useAuth();
+  const { mutate: logout } = useLogout();
   return (
     <div className="flex min-h-screen w-full bg-background-light dark:bg-background-dark font-display text-text-primary-light dark:text-text-primary-dark">
       {/* SideNavBar */}
@@ -43,7 +49,7 @@ export default function DashboardLayout({
             </Link>
             <Link
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-white/5 transition-colors duration-200"
-              href="#"
+              href="/dashboard/recruitment"
             >
               <span className="material-symbols-outlined">work</span>
               <p className="text-sm font-medium leading-normal">Recruitment</p>
@@ -72,6 +78,13 @@ export default function DashboardLayout({
             <span className="material-symbols-outlined">help</span>
             <p className="text-sm font-medium leading-normal">Support</p>
           </Link>
+          <button
+            onClick={() => logout()}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors duration-200"
+          >
+            <span className="material-symbols-outlined">logout</span>
+            <p className="text-sm font-medium leading-normal">Logout</p>
+          </button>
         </div>
       </aside>
 
@@ -106,18 +119,18 @@ export default function DashboardLayout({
             <div className="h-10 w-px bg-border-light dark:bg-border-dark"></div>
             <div className="flex items-center gap-3">
               <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                style={{
-                  backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCm6Twyyw2Rm4McyRxAacRMS1ixd58NPD3hbPD3uaOIgVgxx1m1MhyUOAMjrUd74fjYa0Z0SHEtkkwvJJdk-EIxCUIIb705oHcSQiWRC6g_K2rED0X4U0YoQzjDMeJLXboB6GhlEQzVU1GWDP986nBfRZoU5fP6Rp5PHL8M22tvx99Yf-tw-mWy1ya148clM8kowEjeuLZPYQHF2lUhzvnUDs__liQavgpXS8C9au3nvyxFW9t-HesqCVzSaWOBrTWPhIn0zxNISsWM")',
-                }}
-              ></div>
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-primary/20 flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-primary text-2xl">
+                  person
+                </span>
+              </div>
               <div className="flex-col hidden md:flex">
                 <p className="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">
-                  Alex Turner
+                  {user?.full_name || user?.email || 'User'}
                 </p>
                 <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                  HR Manager
+                  {user?.email || 'user@example.com'}
                 </p>
               </div>
             </div>

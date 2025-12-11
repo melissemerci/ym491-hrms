@@ -31,6 +31,27 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d app_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  backup-on-start:
+    image: postgres:15 # pg_dump aracını kullanmak için aynı imajı kullanıyoruz
+    container_name: startup_backup_worker
+    depends_on:
+      db:
+        condition: service_healthy # db servisi "healthy" olana kadar bu servis başlamaz
+    environment:
+      PGPASSWORD: password # pg_dump için şifre
+    volumes:
+      - ./backups:/backups # Yedeklerin ana makinede tutulacağı yer
+    # Bu komut çalışır, yedeği alır ve container durur (exit code 0)
+    command: >
+      sh -c "echo 'Veritabani hazir, yedek aliniyor...' &&
+             pg_dump -h db -U user -d app_db > /backups/backup_startup_$(date +%Y%m%d_%H%M%S).sql &&
+             echo 'Yedekleme tamamlandi!'"
 
   ai-service:
     build: ./ai-service
@@ -52,6 +73,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/app_db
       - GEMINI_API_KEY=AIzaSyCchn3aflIROtmRmieoIBidk9zx410RNnE
+      - BASE_SERVICE_URL=http://base-service:8000
+      - SECRET_KEY=your-secret-key-change-in-production
     depends_on:
       - db
     restart: always
@@ -75,6 +98,7 @@ services:
       - ./base-service:/app
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/app_db
+      - SECRET_KEY=your-secret-key-change-in-production
     depends_on:
       - db
     restart: always
@@ -96,9 +120,14 @@ services:
           path: ./io-service/requirements.txt
     volumes:
       - ./io-service:/app
-    # IO service might need firebase credentials env vars
     environment:
       - FIREBASE_CREDENTIALS_PATH=/app/firebase-credentials.json
+      - DATABASE_URL=postgresql://user:password@db:5432/app_db
+      - BASE_SERVICE_URL=http://base-service:8000
+      - SECRET_KEY=your-secret-key-change-in-productionon
+      - DATABASE_URL=postgresql://user:password@db:5432/app_db
+    depends_on:
+      - db
     restart: always
 
 volumes:

@@ -1,17 +1,27 @@
+"use client";
+
 import { HeadcountChart } from "@/components/dashboard/headcount-chart";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/auth-provider";
+import { useEmployeeStatistics } from "@/features/employees/hooks/use-employees";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { data: stats, isLoading } = useEmployeeStatistics();
+
+  // Format user's first name for greeting
+  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
+
   return (
     <div className="flex flex-col gap-8">
       {/* PageHeading */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-text-primary-light dark:text-text-primary-dark text-3xl font-bold leading-tight tracking-tight">
-            Welcome back, Alex!
+            Welcome back, {firstName}!
           </h1>
           <p className="text-text-secondary-light dark:text-text-secondary-dark text-base font-normal leading-normal">
-            Here is your HR overview for today, October 26, 2023.
+            Here is your HR overview for today, {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.
           </p>
         </div>
         <div className="flex gap-2">
@@ -31,12 +41,13 @@ export default function DashboardPage() {
             Total Employees
           </p>
           <div className="flex items-end gap-2">
-            <p className="text-text-primary-light dark:text-text-primary-dark tracking-tight text-3xl font-bold leading-tight">
-              1,254
-            </p>
-            <p className="text-green-500 text-sm font-medium leading-normal">
-              +1.5%
-            </p>
+            {isLoading ? (
+              <div className="h-9 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+            ) : (
+              <p className="text-text-primary-light dark:text-text-primary-dark tracking-tight text-3xl font-bold leading-tight">
+                {stats?.total_employees?.toLocaleString() || 0}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex flex-col gap-2 rounded-xl p-6 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark shadow-sm">

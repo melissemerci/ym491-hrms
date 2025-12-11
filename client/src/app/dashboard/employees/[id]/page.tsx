@@ -1,15 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, use } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { employeesApi } from "@/features/employees/api/employees-api";
 
 export default function EmployeeDetailsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const [activeTab, setActiveTab] = useState("personal");
+  const { id } = use(params);
+
+  const { data: employee, isLoading: isLoadingEmployee } = useQuery({
+    queryKey: ["employee", id],
+    queryFn: () => employeesApi.getById(parseInt(id)),
+  });
+
+  const { data: cv, isLoading: isLoadingCV } = useQuery({
+    queryKey: ["employee-cv", id],
+    queryFn: () => employeesApi.getCV(parseInt(id)),
+  });
+
+  if (isLoadingEmployee || isLoadingCV) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  if (!employee || !cv) {
+    return <div className="p-6">Employee not found</div>;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,7 +55,7 @@ export default function EmployeeDetailsPage({
           /
         </span>
         <span className="text-text-primary-light dark:text-text-primary-dark text-sm font-medium leading-normal">
-          Jane Doe
+          {employee.first_name} {employee.last_name}
         </span>
       </div>
 
@@ -50,15 +71,15 @@ export default function EmployeeDetailsPage({
           ></div>
           <div className="flex flex-col justify-center">
             <p className="text-text-primary-light dark:text-text-primary-dark text-[22px] font-bold leading-tight tracking-[-0.015em]">
-              Jane Doe
+              {employee.first_name} {employee.last_name}
             </p>
             <p className="text-text-secondary-light dark:text-text-secondary-dark text-base font-normal leading-normal">
-              Senior Product Designer, Product Team
+              {cv?.personal_info?.professional_title || employee.title}, {employee.department}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              <span className={`h-2 w-2 rounded-full ${employee.is_active ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <p className="text-text-secondary-light dark:text-text-secondary-dark text-base font-normal leading-normal">
-                Status: Active
+                Status: {employee.is_active ? 'Active' : 'Inactive'}
               </p>
             </div>
           </div>
@@ -163,7 +184,7 @@ export default function EmployeeDetailsPage({
                       Email Address
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      jane.doe@company.com
+                      {cv?.personal_info?.email || "N/A"}
                     </p>
                   </div>
                   <div>
@@ -171,7 +192,7 @@ export default function EmployeeDetailsPage({
                       Phone
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      (123) 456-7890
+                      {cv?.personal_info?.phone || "N/A"}
                     </p>
                   </div>
                   <div className="col-span-1 md:col-span-2">
@@ -179,7 +200,7 @@ export default function EmployeeDetailsPage({
                       Address
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      123 Main St, Anytown, USA 12345
+                      {cv?.addresses?.length > 0 && cv.addresses[0].is_current ? `${cv.addresses[0].street || ''}, ${cv.addresses[0].city || ''}, ${cv.addresses[0].country || ''} ${cv.addresses[0].postal_code || ''}`.trim() : "N/A"}
                     </p>
                   </div>
                 </div>
@@ -188,7 +209,7 @@ export default function EmployeeDetailsPage({
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark">
-                    Emergency Contact
+                    Basic Information
                   </h3>
                   <button className="text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
                     <span className="material-symbols-outlined text-lg">
@@ -199,29 +220,413 @@ export default function EmployeeDetailsPage({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                   <div>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                      Name
+                      Birth Date
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      John Doe
+                      {cv?.personal_info?.birth_date ? new Date(cv.personal_info.birth_date).toLocaleDateString() : "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                      Relationship
+                      Gender
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      Spouse
+                      {cv?.personal_info?.gender || "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                      Phone
+                      Nationality
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      (098) 765-4321
+                      {cv?.personal_info?.nationality || "N/A"}
+                    </p>
+                  </div>
+                   <div>
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                      LinkedIn
+                    </p>
+                    <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                      {cv?.personal_info?.linkedin_url ? <a href={cv.personal_info.linkedin_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">View Profile</a> : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                      Website
+                    </p>
+                    <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                      {cv?.personal_info?.website ? <a href={cv.personal_info.website} target="_blank" rel="noreferrer" className="text-primary hover:underline">Visit Website</a> : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                      GitHub
+                    </p>
+                    <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                      {cv?.personal_info?.github_url ? <a href={cv.personal_info.github_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">View Profile</a> : "N/A"}
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Professional Summary */}
+              {cv?.personal_info?.professional_summary && (
+                <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark">
+                      Professional Summary
+                    </h3>
+                  </div>
+                  <p className="text-text-primary-light dark:text-text-primary-dark leading-relaxed">
+                    {cv.personal_info.professional_summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Education */}
+              {cv?.education && cv.education.length > 0 && (
+                <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                  <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                    Education
+                  </h3>
+                  <div className="space-y-4">
+                    {cv.education.map((edu, index) => (
+                      <div key={index} className="pb-4 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark">
+                              {edu.degree} {edu.field_of_study && `in ${edu.field_of_study}`}
+                            </h4>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                              {edu.institution}
+                            </p>
+                          </div>
+                          <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap">
+                            {edu.start_date && new Date(edu.start_date).getFullYear()} - {edu.end_date ? new Date(edu.end_date).getFullYear() : "Present"}
+                          </span>
+                        </div>
+                        {edu.gpa && (
+                          <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                            GPA: {edu.gpa}
+                          </p>
+                        )}
+                        {edu.thesis && (
+                          <p className="text-sm text-text-primary-light dark:text-text-primary-dark mt-2">
+                            <span className="font-medium">Thesis:</span> {edu.thesis}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Technical Skills */}
+              {cv?.technical_skills && cv.technical_skills.length > 0 && (
+                <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                  <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                    Technical Skills
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {cv.technical_skills.map((skill, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                            {skill.skill_name}
+                          </p>
+                          <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                            {skill.proficiency_level} {skill.years_of_experience && `• ${skill.years_of_experience} years`}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          skill.proficiency_level === 'Expert' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                          skill.proficiency_level === 'Advanced' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                          'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {skill.proficiency_level}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Soft Skills & Languages */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {cv?.soft_skills && cv.soft_skills.length > 0 && (
+                  <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                      Soft Skills
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {cv.soft_skills.map((skill, index) => (
+                        <span key={index} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm">
+                          {skill.skill_name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {cv?.languages && cv.languages.length > 0 && (
+                  <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                      Languages
+                    </h3>
+                    <div className="space-y-2">
+                      {cv.languages.map((lang, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                            {lang.language}
+                          </span>
+                          <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                            {lang.proficiency}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Certifications */}
+              {cv?.certifications && cv.certifications.length > 0 && (
+                <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                  <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                    Certifications
+                  </h3>
+                  <div className="space-y-4">
+                    {cv.certifications.map((cert, index) => (
+                      <div key={index} className="pb-4 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark">
+                              {cert.certification_name}
+                            </h4>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                              {cert.issuing_organization}
+                            </p>
+                            {cert.credential_id && (
+                              <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
+                                ID: {cert.credential_id}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                              {cert.issue_date && new Date(cert.issue_date).toLocaleDateString()}
+                            </p>
+                            {cert.expiration_date && !cert.does_not_expire && (
+                              <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                                Expires: {new Date(cert.expiration_date).toLocaleDateString()}
+                              </p>
+                            )}
+                            {cert.does_not_expire && (
+                              <p className="text-xs text-green-600 dark:text-green-400">
+                                No Expiration
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {cert.credential_url && (
+                          <a href={cert.credential_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+                            Verify Credential
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Projects */}
+              {cv?.projects && cv.projects.length > 0 && (
+                <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                  <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                    Projects
+                  </h3>
+                  <div className="space-y-4">
+                    {cv.projects.map((project, index) => (
+                      <div key={index} className="pb-4 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark">
+                              {project.project_name}
+                              {project.is_current && (
+                                <span className="ml-2 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">
+                                  Ongoing
+                                </span>
+                              )}
+                            </h4>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                              {project.role}
+                            </p>
+                          </div>
+                          <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-nowrap ml-4">
+                            {project.start_date && new Date(project.start_date).getFullYear()} - {project.end_date ? new Date(project.end_date).getFullYear() : "Present"}
+                          </span>
+                        </div>
+                        {project.description && (
+                          <p className="text-sm text-text-primary-light dark:text-text-primary-dark mt-2">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Awards & Publications */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {cv?.awards && cv.awards.length > 0 && (
+                  <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                      Awards & Recognition
+                    </h3>
+                    <div className="space-y-3">
+                      {cv.awards.map((award, index) => (
+                        <div key={index} className="pb-3 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                          <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark text-sm">
+                            {award.award_name}
+                          </h4>
+                          <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                            {award.issuer} • {award.award_date && new Date(award.award_date).toLocaleDateString()}
+                          </p>
+                          {award.description && (
+                            <p className="text-xs text-text-primary-light dark:text-text-primary-dark mt-1">
+                              {award.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {cv?.publications && cv.publications.length > 0 && (
+                  <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                      Publications
+                    </h3>
+                    <div className="space-y-3">
+                      {cv.publications.map((pub, index) => (
+                        <div key={index} className="pb-3 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                          <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark text-sm">
+                            {pub.title}
+                          </h4>
+                          <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                            {pub.publisher} • {pub.publication_date && new Date(pub.publication_date).toLocaleDateString()}
+                          </p>
+                          {pub.description && (
+                            <p className="text-xs text-text-primary-light dark:text-text-primary-dark mt-1">
+                              {pub.description}
+                            </p>
+                          )}
+                          {pub.url && (
+                            <a href={pub.url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
+                              Read Article
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Volunteering */}
+              {cv?.volunteering && cv.volunteering.length > 0 && (
+                <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                  <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                    Volunteering
+                  </h3>
+                  <div className="space-y-3">
+                    {cv.volunteering.map((vol, index) => (
+                      <div key={index} className="flex justify-between items-start pb-3 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                        <div>
+                          <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark">
+                            {vol.role}
+                            {vol.is_current && (
+                              <span className="ml-2 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">
+                                Current
+                              </span>
+                            )}
+                          </h4>
+                          <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                            {vol.organization}
+                          </p>
+                          {vol.description && (
+                            <p className="text-sm text-text-primary-light dark:text-text-primary-dark mt-1">
+                              {vol.description}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-nowrap ml-4">
+                          {vol.start_date && new Date(vol.start_date).getFullYear()} - {vol.end_date ? new Date(vol.end_date).getFullYear() : "Present"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hobbies & Additional Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {cv?.hobbies && cv.hobbies.length > 0 && (
+                  <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                      Hobbies & Interests
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {cv.hobbies.map((hobby, index) => (
+                        <span key={index} className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm">
+                          {hobby.hobby}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {cv?.additional_info && (
+                  <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                      Additional Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      {cv.additional_info.driving_license && (
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary-light dark:text-text-secondary-dark">Driving License:</span>
+                          <span className="font-medium text-text-primary-light dark:text-text-primary-dark">{cv.additional_info.driving_license}</span>
+                        </div>
+                      )}
+                      {cv.additional_info.military_status && (
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary-light dark:text-text-secondary-dark">Military Status:</span>
+                          <span className="font-medium text-text-primary-light dark:text-text-primary-dark">{cv.additional_info.military_status}</span>
+                        </div>
+                      )}
+                      {cv.additional_info.availability && (
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary-light dark:text-text-secondary-dark">Availability:</span>
+                          <span className="font-medium text-text-primary-light dark:text-text-primary-dark">{cv.additional_info.availability}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-text-secondary-light dark:text-text-secondary-dark">Willing to Relocate:</span>
+                        <span className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                          {cv.additional_info.willing_to_relocate ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-secondary-light dark:text-text-secondary-dark">Willing to Travel:</span>
+                        <span className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                          {cv.additional_info.willing_to_travel ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Timeline/History View */}
@@ -282,29 +687,22 @@ export default function EmployeeDetailsPage({
                 <h3 className="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
                   Current Role
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {cv?.work_experience?.filter(exp => exp.is_current).map((exp, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 last:mb-0">
                   <div>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
                       Job Title
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      Senior Product Designer
+                      {exp.job_title}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                      Department
+                      Company
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      Product & Engineering
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                      Manager
-                    </p>
-                    <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      Sarah Connor
+                      {exp.company}
                     </p>
                   </div>
                   <div>
@@ -312,7 +710,7 @@ export default function EmployeeDetailsPage({
                       Start Date
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      March 1, 2020
+                      {new Date(exp.start_date).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
@@ -320,18 +718,30 @@ export default function EmployeeDetailsPage({
                       Employment Type
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      Full-Time
+                      {exp.employment_type || "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                      Work Location
+                      Location
                     </p>
                     <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
-                      Remote (San Francisco)
+                      {exp.city || 'N/A'}{exp.city && exp.country ? ', ' : ''}{exp.country || ''}
                     </p>
                   </div>
+                  {exp.description && (
+                    <div className="col-span-1 md:col-span-2">
+                      <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                        Description
+                      </p>
+                      <p className="font-medium text-text-primary-light dark:text-text-primary-dark">
+                        {exp.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
+                ))}
+                {!cv?.work_experience?.some(exp => exp.is_current) && <p className="text-text-secondary-light dark:text-text-secondary-dark">No current role found.</p>}
               </div>
 
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border-light dark:border-border-dark">
@@ -339,44 +749,34 @@ export default function EmployeeDetailsPage({
                   Previous Roles
                 </h3>
                 <div className="space-y-6">
-                  <div className="flex flex-col gap-1 pb-6 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
+                  {cv?.work_experience?.filter(exp => !exp.is_current).map((exp, index) => (
+                  <div key={index} className="flex flex-col gap-1 pb-6 border-b border-border-light dark:border-border-dark last:border-0 last:pb-0">
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark">
-                          Product Designer
+                          {exp.job_title}
                         </h4>
                         <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                          TechStart Inc.
+                          {exp.company}
                         </p>
+                        {(exp.city || exp.country) && (
+                          <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
+                            {exp.city || ''}{exp.city && exp.country ? ', ' : ''}{exp.country || ''}
+                          </p>
+                        )}
                       </div>
-                      <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                        2018 - 2020
+                      <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap">
+                        {new Date(exp.start_date).getFullYear()} - {exp.end_date ? new Date(exp.end_date).getFullYear() : "Present"}
                       </span>
                     </div>
-                    <p className="text-sm text-text-primary-light dark:text-text-primary-dark mt-2">
-                      Led design for the mobile application team, improving user
-                      retention by 15%.
-                    </p>
+                    {exp.description && (
+                      <p className="text-sm text-text-primary-light dark:text-text-primary-dark mt-2">
+                        {exp.description}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-text-primary-light dark:text-text-primary-dark">
-                          Junior UI Designer
-                        </h4>
-                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                          Creative Solutions Agency
-                        </p>
-                      </div>
-                      <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                        2016 - 2018
-                      </span>
-                    </div>
-                    <p className="text-sm text-text-primary-light dark:text-text-primary-dark mt-2">
-                      Created visual assets and marketing materials for various
-                      clients.
-                    </p>
-                  </div>
+                  ))}
+                  {!cv?.work_experience?.some(exp => !exp.is_current) && <p className="text-text-secondary-light dark:text-text-secondary-dark">No previous roles found.</p>}
                 </div>
               </div>
             </div>

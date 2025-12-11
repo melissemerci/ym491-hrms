@@ -1,8 +1,22 @@
 from typing import Union
 from fastapi import FastAPI
 from .firebase import get_firestore_client
+from .routers import cv
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(root_path="/api/io")
+
+app.include_router(cv.router)
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+        allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],    
+)
 
 
 @app.get("/")

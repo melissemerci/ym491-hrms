@@ -1,11 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { LoginForm } from "@/components/login-form";
 import { Icons } from "@/components/icons";
 import { motion } from "motion/react";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function LoginPage() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push(redirect);
+    }
+  }, [isAuthenticated, isLoading, router, redirect]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#111722]">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return null;
+  }
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark overflow-x-hidden font-display">
       <div className="flex flex-1 w-full">

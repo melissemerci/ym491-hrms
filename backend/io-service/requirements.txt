@@ -1,3 +1,9 @@
 fastapi
 uvicorn[standard]
 firebase-admin
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+bcrypt==4.3.0
+python-jose[cryptography]
+requests

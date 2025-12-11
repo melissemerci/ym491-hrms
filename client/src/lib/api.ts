@@ -1,4 +1,5 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError } from 'axios';
+import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
@@ -13,7 +14,7 @@ api.interceptors.request.use(
   (config) => {
     // Client-side only
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -27,14 +28,20 @@ api.interceptors.response.use(
   (response) => response.data,
   (error: AxiosError) => {
     const message =
-      (error.response?.data as any)?.message || error.message || 'Something went wrong';
+      (error.response?.data as any)?.detail || 
+      (error.response?.data as any)?.message || 
+      error.message || 
+      'Something went wrong';
     
-    // Handle 401 specifically if needed (e.g. redirect to login)
+    // Handle 401 - Unauthorized
     if (error.response?.status === 401) {
-       // Optionally redirect to login or clear token
        if (typeof window !== 'undefined') {
-         // localStorage.removeItem('token');
-         // window.location.href = '/login';
+         // Clear token and redirect to login
+         Cookies.remove('token');
+         const currentPath = window.location.pathname;
+         if (currentPath !== '/login') {
+           window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+         }
        }
     }
 

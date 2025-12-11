@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
+import { useAuth } from "@/providers/auth-provider";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -20,6 +23,23 @@ const stagger = {
 };
 
 export default function LandingPage() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background-dark">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark overflow-x-hidden font-display">
       <div className="layout-container flex h-full grow flex-col">
