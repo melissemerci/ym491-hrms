@@ -6,6 +6,8 @@ import logging
 from ..database import get_db
 from ..models import cv as models
 from ..schemas import cv as schemas
+from ..dependencies import RoleChecker
+from ..models.role import UserRole
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +19,10 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.get("/{employee_id}", response_model=schemas.FullCV)
+allow_any_authenticated_user = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
+allow_admin_only = Depends(RoleChecker([UserRole.ADMIN]))
+
+@router.get("/{employee_id}", response_model=schemas.FullCV, dependencies=[allow_any_authenticated_user])
 def get_employee_cv(employee_id: int, db: Session = Depends(get_db)):
     try:
         personal_info = db.query(models.EmployeePersonalInfo).filter(models.EmployeePersonalInfo.employee_id == employee_id).first()
