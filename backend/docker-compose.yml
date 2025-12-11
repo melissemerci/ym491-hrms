@@ -125,7 +125,7 @@ services:
       - DATABASE_URL=postgresql://user:password@db:5432/app_db
       - BASE_SERVICE_URL=http://base-service:8000
       - SECRET_KEY=your-secret-key-change-in-productionon
-      - DATABASE_URL=postgresql://user:password@db:5432/app_db
+
     depends_on:
       - db
     restart: always
