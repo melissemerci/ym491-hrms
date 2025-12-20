@@ -50,6 +50,7 @@ class JobApplicationBase(BaseModel):
 
 class JobApplicationCreate(JobApplicationBase):
     job_posting_id: int
+    analyzed_cv_data: Optional[Dict[str, Any]] = None  # Full CV data from n8n analysis
 
 class JobApplicationUpdate(BaseModel):
     status: Optional[str] = None
@@ -59,6 +60,7 @@ class JobApplicationUpdate(BaseModel):
 class JobApplication(JobApplicationBase):
     id: int
     job_posting_id: int
+    candidate_id: Optional[str] = None  # Reference to candidate in candidate tables
     applied_at: datetime
     updated_at: Optional[datetime]
     

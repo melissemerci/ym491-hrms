@@ -26,7 +26,7 @@ export const authApi = {
   },
 
   me: async (): Promise<User> => {
-    const response = await api.get<User>('/api/base/auth/me') as any;
+    const response = await api.get<User>('/api/base/auth/meauth/me') as any;
     return response as User;
   },
 };

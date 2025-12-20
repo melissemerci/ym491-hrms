@@ -37,6 +37,7 @@ class JobApplication(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     job_posting_id = Column(Integer, ForeignKey("job_postings.id"), nullable=False, index=True)
+    candidate_id = Column(String(50), index=True)  # Reference to candidate in candidate tables
     candidate_name = Column(String(150), nullable=False)
     email = Column(String(255), nullable=False, index=True)
     phone = Column(String(50))

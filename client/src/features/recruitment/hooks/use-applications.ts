@@ -9,3 +9,4 @@ export const useJobApplications = (jobId: number, status?: string) => {
   });
 };
 
+

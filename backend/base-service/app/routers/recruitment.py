@@ -4,6 +4,10 @@ from typing import List, Optional
 from datetime import date, datetime
 import httpx
 import json
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 from ..database import get_db
 from ..dependencies import get_current_active_user
@@ -116,7 +120,7 @@ def get_job_applications(
     return query.all()
 
 @router.post("/applications", response_model=JobApplicationSchema)
-def create_application(
+async def create_application(
     application: JobApplicationCreate,
     db: Session = Depends(get_db)
     # No auth required for candidates applying? 
@@ -131,7 +135,38 @@ def create_application(
     if not job:
         raise HTTPException(status_code=404, detail="Job posting not found")
 
-    db_app = JobApplication(**application.dict())
+    # Save candidate CV data to candidate tables if analyzed_cv_data is provided
+    candidate_id = None
+    analyzed_cv_data = application.analyzed_cv_data
+    
+    if analyzed_cv_data:
+        try:
+            # Call io-service to save candidate data
+            io_service_url = "http://io-service:8000/api/io/cv/save-analyzed-cv"
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    io_service_url,
+                    json=analyzed_cv_data,
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    candidate_id = result.get("candidate_id")
+                    logger.info(f"Candidate CV data saved with ID: {candidate_id}")
+                else:
+                    logger.error(f"Failed to save candidate CV data: {response.status_code} - {response.text}")
+                    
+        except Exception as e:
+            logger.error(f"Error saving candidate CV data: {str(e)}")
+            # Don't fail the application if candidate save fails
+    
+    # Create application (exclude analyzed_cv_data from the dict as it's not a model field)
+    app_data = application.dict(exclude={"analyzed_cv_data"})
+    app_data["candidate_id"] = candidate_id  # Add the candidate_id reference
+    
+    db_app = JobApplication(**app_data)
     db.add(db_app)
     db.commit()
     db.refresh(db_app)
@@ -364,7 +399,7 @@ async def trigger_ai_review(
         
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://ai-service:8000/api/ai/generate/cv-review",
+                "http://ai-service:8000/api/ai/generate/cv-review", # Role uygunluk test edilecek.
                 json={
                     "cv_text": cv_text,
                     "job_requirements": job.requirements or [],

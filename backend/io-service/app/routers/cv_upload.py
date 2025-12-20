@@ -122,8 +122,28 @@ def parse_analyze_response(response_data: dict) -> dict:
     try:
         # The response should be a list with the analyzed data
         if isinstance(response_data, list) and len(response_data) > 0:
-            return response_data[0]
-        return response_data
+            analyzed_data = response_data[0]
+        else:
+            analyzed_data = response_data
+        
+        # Parse JSON string fields to actual objects
+        json_fields = [
+            'work_experience',
+            'education_details',
+            'projects',
+            'volunteering',
+            'raw_structured_data'
+        ]
+        
+        for field in json_fields:
+            if field in analyzed_data and isinstance(analyzed_data[field], str):
+                try:
+                    analyzed_data[field] = json.loads(analyzed_data[field])
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse {field} JSON: {e}")
+                    analyzed_data[field] = None
+        
+        return analyzed_data
     except Exception as e:
         logger.error(f"Error parsing analyze response: {e}")
         raise ValueError(f"Failed to parse analyze response: {str(e)}")
@@ -249,13 +269,13 @@ async def upload_and_check_coverage(
             coverage=coverage
         )
         
-        # Cache result if Redis is available (15 mins = 900 seconds)
+        # Cache result if Redis is available (30 mins = 1800 seconds)
         if redis_client:
             try:
                 # We store the dict representation
                 redis_client.setex(
                     cache_key,
-                    900, 
+                    1800, # 30 minutes
                     result.json()
                 )
                 logger.info(f"Cached result for file hash: {file_hash}")
@@ -282,11 +302,13 @@ async def get_uploaded_file(filename: str):
 async def analyze_cv(
     file_url: str = Form(...),
     additional_fields: Optional[str] = Form(None),  # JSON string of additional fields
+    save_to_db: bool = Form(False),  # Whether to save to database automatically
 ):
     """
     Send CV to n8n analyzer webhook and get standardized CV data.
     
     Optionally includes additional fields provided by the user.
+    Optionally saves the analyzed data to the database if save_to_db is True.
     """
     try:
         # Parse additional fields if provided
@@ -340,18 +362,66 @@ async def analyze_cv(
             
             # Merge additional fields into analyzed data if provided
             if extra_data:
+                # Update raw_structured_data with additional fields
+                raw_data = analyzed_data.get("raw_structured_data", {})
+                if isinstance(raw_data, str):
+                    raw_data = json.loads(raw_data)
+                
+                # Merge additional info
+                additional_info = raw_data.get("additional_information", {})
+                if "driving_license" in extra_data:
+                    additional_info["driving_license"] = extra_data["driving_license"]
+                if "military_status" in extra_data:
+                    additional_info["military_status"] = extra_data["military_status"]
+                if "availability" in extra_data:
+                    additional_info["availability"] = extra_data["availability"]
+                if "willing_to_relocate" in extra_data:
+                    additional_info["willing_to_relocate"] = extra_data["willing_to_relocate"]
+                if "willing_to_travel" in extra_data:
+                    additional_info["willing_to_travel"] = extra_data["willing_to_travel"]
+                if "hobbies" in extra_data:
+                    additional_info["hobbies"] = extra_data["hobbies"]
+                
+                raw_data["additional_information"] = additional_info
+                analyzed_data["raw_structured_data"] = raw_data
+                
+                # Update top-level fields
                 if "city" in extra_data or "country" in extra_data:
                     analyzed_data["location"] = f"{extra_data.get('city', '')}, {extra_data.get('country', '')}".strip(", ")
                 if "languages" in extra_data:
                     analyzed_data["languages"] = ", ".join(extra_data["languages"]) if isinstance(extra_data["languages"], list) else extra_data["languages"]
-                # Add other additional fields directly
-                for key in ["driving_license", "military_status", "availability", "willing_to_relocate", "willing_to_travel", "hobbies"]:
-                    if key in extra_data:
-                        analyzed_data[key] = extra_data[key]
+            
+            # Optionally save to database
+            candidate_id = None
+            if save_to_db:
+                try:
+                    from ..database import get_db
+                    db_gen = get_db()
+                    db = next(db_gen)
+                    
+                    # Import the save function from cv router
+                    from .cv import save_analyzed_cv
+                    
+                    result = save_analyzed_cv(analyzed_data, db)
+                    candidate_id = result.get("candidate_id")
+                    logger.info(f"CV data saved to database with candidate_id: {candidate_id}")
+                    
+                except Exception as save_error:
+                    logger.error(f"Failed to save CV to database: {save_error}")
+                    # Don't fail the whole request if save fails
+                finally:
+                    try:
+                        db_gen.close()
+                    except:
+                        pass
 
             return AnalyzedCVResponse(
                 success=True,
-                data=analyzed_data
+                data={
+                    **analyzed_data,
+                    "saved_to_db": save_to_db,
+                    "db_candidate_id": candidate_id if candidate_id else None
+                }
             )
             
         except requests.Timeout:

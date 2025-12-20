@@ -55,3 +55,4 @@ WHERE pipeline_stage = 'applied';
 
 COMMIT;
 
+

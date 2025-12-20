@@ -26,7 +26,7 @@ export const applicationsApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minute timeout for CV processing
+        timeout: 360000, // 2 minute timeout for CV processing
       }
     );
 
@@ -46,6 +46,7 @@ export const applicationsApi = {
     if (additionalFields) {
       formData.append('additional_fields', JSON.stringify(additionalFields));
     }
+    formData.append('save_to_db', 'true');
 
     const response = await axios.post<AnalyzedCVResponse>(
       `${IO_SERVICE_URL}/api/io/cv-application/analyze`,
@@ -54,7 +55,7 @@ export const applicationsApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000,
+        timeout: 360000,
       }
     );
 

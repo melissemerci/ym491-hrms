@@ -60,7 +60,7 @@ export default function StageCard({ application, children }: StageCardProps) {
           )}
           {application.resume_url && (
             <a
-              href={application.resume_url}
+              href={`${process.env.NEXT_PUBLIC_API_URL}${application.resume_url}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-primary hover:underline"
@@ -81,4 +81,5 @@ export default function StageCard({ application, children }: StageCardProps) {
     </div>
   );
 }
+
 
